@@ -35,5 +35,7 @@ COPY --from=build /repo/node_modules node_modules
 EXPOSE 4000
 # Runs pending migrations against the live DATABASE_URL, then starts the API. Baked in
 # here (rather than left to an external deploy hook) so any host running this image
-# boots correctly without extra configuration.
-CMD ["sh", "-c", "pnpm --filter @nora/api exec prisma migrate deploy --schema ../../database/schema.prisma && node apps/api/dist/main.js"]
+# boots correctly without extra configuration. The first Render boot left the safety
+# migration in a failed state before its prerequisites were ordered correctly; clear
+# only that failed record so Prisma can apply the repaired migration sequence.
+CMD ["sh", "-c", "(pnpm --filter @nora/api exec prisma migrate resolve --rolled-back 20260811210000_safety_checkins --schema ../../database/schema.prisma || true) && pnpm --filter @nora/api exec prisma migrate deploy --schema ../../database/schema.prisma && node apps/api/dist/main.js"]

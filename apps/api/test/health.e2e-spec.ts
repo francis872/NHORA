@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { configureApp } from "../src/main";
 
 // Requires the Postgres/PostGIS container running (see docker-compose.yml) and
 // a DATABASE_URL configured, since AppModule wires PrismaService globally.
@@ -14,6 +15,7 @@ describe("Health (e2e)", () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+    configureApp(app);
     await app.init();
   });
 

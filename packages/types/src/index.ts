@@ -53,6 +53,16 @@ export enum AlertChannel {
   SMS = "SMS",
 }
 
+export enum ResourceType {
+  HOSPITAL = "HOSPITAL",
+  SHELTER = "SHELTER",
+  FIRE_STATION = "FIRE_STATION",
+  POLICE_STATION = "POLICE_STATION",
+  SUPPLY_POINT = "SUPPLY_POINT",
+  MEETING_POINT = "MEETING_POINT",
+  OTHER = "OTHER",
+}
+
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -70,4 +80,28 @@ export interface PublicUser {
   fullName: string;
   role: Role;
   createdAt: string;
+}
+
+export interface IncidentDto {
+  id: string;
+  type: IncidentType;
+  category: string | null;
+  description: string;
+  severity: Severity;
+  priorityScore: number;
+  priorityClass: Severity;
+  status: IncidentStatus;
+  latitude: number;
+  longitude: number;
+  locationLabel: string | null;
+  source: string;
+  confidenceScore: number | null;
+  peopleAffected: number | null;
+  peopleMissing: number | null;
+  peopleInjured: number | null;
+  infrastructureAffected: string | null;
+  duplicateOfId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  verifiedAt: string | null;
 }

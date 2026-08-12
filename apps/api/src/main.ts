@@ -1,12 +1,12 @@
 import "reflect-metadata";
 import helmet from "helmet";
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
+// Shared by main.ts and e2e tests so both boot the app identically (global
+// prefix, validation pipe, security headers, CORS).
+export function configureApp(app: INestApplication) {
   app.use(helmet());
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(",") ?? "http://localhost:3000",
@@ -20,6 +20,12 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix("api/v1", { exclude: ["health", "ready"] });
+  return app;
+}
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  configureApp(app);
 
   const port = process.env.API_PORT ?? 4000;
   await app.listen(port);
@@ -27,4 +33,8 @@ async function bootstrap() {
   console.log(`NORA API listening on port ${port}`);
 }
 
-bootstrap();
+// Guard against re-running bootstrap() when this module is only imported for
+// configureApp() (e.g. from e2e tests).
+if (require.main === module) {
+  bootstrap();
+}

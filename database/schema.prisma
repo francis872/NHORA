@@ -1,10 +1,11 @@
 // NORA — Prisma schema
-// Phase 1 scope: authentication & core User model only.
-// Incident, Resource, Alert, etc. (see section 12 of the master prompt) land in later phases.
+// Phase 1: authentication & core User model. Phase 2: Incident/IncidentReport/Resource.
+// Alert, Chat, DataPipeline, MLPrediction, etc. (section 12) land in later phases.
 // PostGIS is enabled on the postgis/postgis Docker image; the `postgresqlExtensions`
 // preview feature is intentionally NOT used here — it caused a P1010 permission error
-// during `migrate dev` in local testing. Geometry columns will be added via a manual
-// SQL migration (`CREATE EXTENSION IF NOT EXISTS postgis;`) when Phase 2 needs them.
+// during `migrate dev` in local testing. Geometry lives as plain lat/lng columns;
+// spatial queries use raw SQL (ST_MakePoint/ST_DWithin) against those columns, backed
+// by a functional GiST index added in a follow-up migration (see incidents.service.ts).
 
 generator client {
   provider = "prisma-client-js"
@@ -24,6 +25,47 @@ enum Role {
   ADMIN
 }
 
+enum IncidentType {
+  EARTHQUAKE
+  FLOOD
+  LANDSLIDE
+  FIRE
+  STRUCTURAL_DAMAGE
+  ROAD_BLOCK
+  MISSING_PERSON
+  TRAPPED_PERSON
+  MEDICAL_ASSISTANCE
+  SUPPLY_REQUEST
+  OTHER
+}
+
+enum IncidentStatus {
+  REPORTED
+  PENDING_VERIFICATION
+  VERIFIED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  DUPLICATE
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ResourceType {
+  HOSPITAL
+  SHELTER
+  FIRE_STATION
+  POLICE_STATION
+  SUPPLY_POINT
+  MEETING_POINT
+  OTHER
+}
+
 // ── Models ────────────────────────────────────────────────────────────────
 
 model User {
@@ -37,8 +79,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
+  incidentsReported Incident[]       @relation("IncidentReportedBy")
+  incidentsVerified Incident[]       @relation("IncidentVerifiedBy")
+  incidentReports   IncidentReport[]
 
   @@map("users")
 }
@@ -69,4 +114,79 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@map("audit_logs")
+}
+
+model Incident {
+  id                     String         @id @default(uuid())
+  type                   IncidentType
+  category               String?
+  description            String
+  severity               Severity       @default(MEDIUM)
+  priorityScore          Float          @default(0)
+  priorityClass          Severity       @default(MEDIUM)
+  status                 IncidentStatus @default(REPORTED)
+  latitude               Float
+  longitude              Float
+  locationLabel          String?
+  source                 String         @default("CITIZEN_APP")
+  confidenceScore        Float?
+  peopleAffected         Int?
+  peopleMissing          Int?
+  peopleInjured          Int?
+  infrastructureAffected String?
+
+  reportedById String?
+  reportedBy   User?   @relation("IncidentReportedBy", fields: [reportedById], references: [id], onDelete: SetNull)
+
+  verifiedAt   DateTime?
+  verifiedById String?
+  verifiedBy   User?     @relation("IncidentVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  duplicateOfId String?
+  duplicateOf   Incident?  @relation("IncidentDuplicates", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  duplicates    Incident[] @relation("IncidentDuplicates")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reports IncidentReport[]
+
+  @@index([type])
+  @@index([status])
+  @@index([latitude, longitude])
+  @@map("incidents")
+}
+
+// Additional citizen reports pointing at an existing incident — used by the
+// deterministic deduplication check (section 14) instead of creating a new one.
+model IncidentReport {
+  id           String   @id @default(uuid())
+  incidentId   String
+  incident     Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  reportedById String?
+  reportedBy   User?    @relation(fields: [reportedById], references: [id], onDelete: SetNull)
+  description  String?
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime @default(now())
+
+  @@index([incidentId])
+  @@map("incident_reports")
+}
+
+model Resource {
+  id        String       @id @default(uuid())
+  type      ResourceType
+  name      String
+  latitude  Float
+  longitude Float
+  address   String?
+  capacity  Int?
+  status    String       @default("AVAILABLE")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([type])
+  @@index([latitude, longitude])
+  @@map("resources")
 }

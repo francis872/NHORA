@@ -21,6 +21,8 @@ ENV NODE_ENV=production
 COPY --from=build /repo/apps/api/dist apps/api/dist
 COPY --from=build /repo/apps/api/node_modules apps/api/node_modules
 COPY --from=build /repo/database/generated database/generated
+COPY --from=build /repo/database/schema.prisma database/schema.prisma
+COPY --from=build /repo/database/migrations database/migrations
 COPY --from=build /repo/node_modules node_modules
 EXPOSE 4000
 CMD ["node", "apps/api/dist/main.js"]

@@ -1,6 +1,7 @@
 import { getTokens } from "./auth-store";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const REQUEST_TIMEOUT_MS = 15_000;
 
 export const API_ROUTES = {
   register: `${API_BASE_URL}/api/v1/auth/register`,
@@ -25,11 +26,22 @@ export const API_ROUTES = {
 export async function authFetch(input: string, init: RequestInit = {}) {
   const tokens = getTokens();
   const headers = new Headers(init.headers);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   if (tokens?.accessToken) {
     headers.set("Authorization", `Bearer ${tokens.accessToken}`);
   }
   if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  return fetch(input, { ...init, headers });
+  try {
+    return await fetch(input, { ...init, headers, signal: init.signal ?? controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("El servicio tardó demasiado en responder. Inténtalo de nuevo.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }

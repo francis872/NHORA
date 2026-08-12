@@ -27,7 +27,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   configureApp(app);
 
-  const port = process.env.API_PORT ?? 4000;
+  const port = process.env.PORT ?? process.env.API_PORT ?? 4000;
   await app.listen(port);
   // eslint-disable-next-line no-console
   console.log(`NORA API listening on port ${port}`);

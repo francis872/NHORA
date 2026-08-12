@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,11 +54,13 @@ export default function MissingPersonsPage() {
   const [municipality, setMunicipality] = useState("");
   const [results, setResults] = useState<MissingPersonResult[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [mode, setMode] = useState<"search" | "report" | "done">("search");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const {
     register,
@@ -67,17 +69,28 @@ export default function MissingPersonsPage() {
   } = useForm<ReportValues>({ resolver: zodResolver(reportSchema) });
 
   const handleSearch = async () => {
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    setSearchError(null);
     setSearching(true);
     try {
       const url = new URL(API_ROUTES.missingPersons);
       if (name.trim()) url.searchParams.set("name", name.trim());
       if (municipality.trim()) url.searchParams.set("municipality", municipality.trim());
-      const res = await authFetch(url.toString());
+      const res = await authFetch(url.toString(), { signal: controller.signal });
       setResults(res.ok ? await res.json() : []);
+    } catch (error) {
+      setSearchError(controller.signal.aborted ? "Búsqueda cancelada." : error instanceof Error ? error.message : "No se pudo buscar ahora.");
     } finally {
-      setSearching(false);
+      if (searchAbortRef.current === controller) {
+        searchAbortRef.current = null;
+        setSearching(false);
+      }
     }
   };
+
+  const cancelSearch = () => searchAbortRef.current?.abort();
 
   const handleLocate = async () => {
     setLocationError(null);
@@ -93,21 +106,25 @@ export default function MissingPersonsPage() {
   const onSubmit = async (values: ReportValues) => {
     setServerError(null);
     const identity = getIdentity();
-    const res = await authFetch(API_ROUTES.missingPersons, {
-      method: "POST",
-      body: JSON.stringify({
-        ...values,
-        ...coords,
-        deviceId: identity.deviceId,
-        reporterName: identity.displayName,
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      setServerError(body?.message ?? "No se pudo crear el reporte.");
-      return;
+    try {
+      const res = await authFetch(API_ROUTES.missingPersons, {
+        method: "POST",
+        body: JSON.stringify({
+          ...values,
+          ...coords,
+          deviceId: identity.deviceId,
+          reporterName: identity.displayName,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setServerError(body?.message ?? "No se pudo crear el reporte.");
+        return;
+      }
+      setMode("done");
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "No se pudo crear el reporte.");
     }
-    setMode("done");
   };
 
   if (mode === "done") {
@@ -208,14 +225,15 @@ export default function MissingPersonsPage() {
           <label className="mb-1 block text-sm font-medium">Municipio</label>
           <Input value={municipality} onChange={(e) => setMunicipality(e.target.value)} />
         </div>
-        <Button onClick={handleSearch} disabled={searching}>
+        <Button onClick={searching ? cancelSearch : handleSearch} variant={searching ? "outline" : "default"}>
           {searching ? (
             <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
           ) : (
             <Search className="h-4 w-4" aria-hidden />
           )}
-          Buscar coincidencias
+          {searching ? "Cancelar búsqueda" : "Buscar coincidencias"}
         </Button>
+        {searchError && <p className="text-center text-sm text-critical">{searchError}</p>}
       </GlassPanel>
 
       <div className="flex items-center justify-between">

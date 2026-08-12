@@ -12,9 +12,12 @@ export const API_ROUTES = {
   incidentMessages: (id: string) => `${API_BASE_URL}/api/v1/incidents/${id}/messages`,
   sos: `${API_BASE_URL}/api/v1/sos`,
   safetyCheckins: `${API_BASE_URL}/api/v1/safety-checkins`,
+  missingPersons: `${API_BASE_URL}/api/v1/missing-persons`,
+  missingPerson: (id: string) => `${API_BASE_URL}/api/v1/missing-persons/${id}`,
   mapIncidents: `${API_BASE_URL}/api/v1/map/incidents`,
   mapResources: `${API_BASE_URL}/api/v1/map/resources`,
   mapHospitals: `${API_BASE_URL}/api/v1/map/hospitals`,
+  mapMissingPersons: `${API_BASE_URL}/api/v1/map/missing-persons`,
 } as const;
 
 // Attaches the stored access token; callers handle 401s (token expiry) themselves —

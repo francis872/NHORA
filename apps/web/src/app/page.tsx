@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldAlert, LifeBuoy, MapPin, Users, Map as MapIcon } from "lucide-react";
+import { ShieldAlert, LifeBuoy, MapPin, Users, Search, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass-panel";
 
@@ -20,6 +20,12 @@ const actions = [
     href: "/report",
     label: "REPORTAR INCIDENTE",
     icon: MapPin,
+    variant: "glass" as const,
+  },
+  {
+    href: "/missing-persons",
+    label: "BUSCAR UNA PERSONA",
+    icon: Search,
     variant: "glass" as const,
   },
   {

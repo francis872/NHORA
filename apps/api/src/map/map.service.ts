@@ -125,4 +125,22 @@ export class MapService {
   getHospitals(query: NearbyQueryDto) {
     return this.getResources({ ...query, type: ResourceType.HOSPITAL });
   }
+
+  async getMissingPersons() {
+    const rows = await this.prisma.missingPerson.findMany({
+      where: { status: "SEARCHING", latitude: { not: null }, longitude: { not: null } },
+    });
+
+    return toFeatureCollection(
+      rows.map((person) => ({
+        latitude: person.latitude as number,
+        longitude: person.longitude as number,
+        id: person.id,
+        name: person.name,
+        municipality: person.municipality,
+        status: person.status,
+      })),
+      (person) => ({ id: person.id, name: person.name, municipality: person.municipality, status: person.status }),
+    );
+  }
 }

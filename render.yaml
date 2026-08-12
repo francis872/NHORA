@@ -10,7 +10,6 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    dockerCommand: sh -c "node_modules/.bin/prisma migrate deploy --schema database/schema.prisma && node apps/api/dist/main.js"
     plan: free
     autoDeploy: true
     envVars:

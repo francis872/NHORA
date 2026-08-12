@@ -27,4 +27,10 @@ export class MapController {
   getHospitals(@Query() query: NearbyQueryDto) {
     return this.mapService.getHospitals(query);
   }
+
+  @Public()
+  @Get("missing-persons")
+  getMissingPersons() {
+    return this.mapService.getMissingPersons();
+  }
 }

@@ -73,19 +73,24 @@ export default function CommandIncidentsPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-4 px-6 py-10">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Incidentes — Command Center</h1>
-        <Select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as (typeof STATUS_OPTIONS)[number])}
-          className="w-auto"
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Select>
+        <div className="flex items-center gap-2">
+          <Link href="/command/missing-persons">
+            <Button variant="outline" size="sm">Personas buscadas</Button>
+          </Link>
+          <Select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as (typeof STATUS_OPTIONS)[number])}
+            className="w-auto"
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
 
       <GlassPanel className="overflow-x-auto p-0">

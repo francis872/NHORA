@@ -220,7 +220,7 @@ importers:
         version: 5.9.3
 
   packages/types:
-    devDependencies:
+    dependencies:
       typescript:
         specifier: ^5.5.4
         version: 5.9.3

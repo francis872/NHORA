@@ -34,6 +34,7 @@ export interface NoraMapProps {
   center: [number, number];
   incidents: GeoJSON.FeatureCollection;
   resources: GeoJSON.FeatureCollection;
+  missingPersons?: GeoJSON.FeatureCollection;
   className?: string;
   // Fallback for when browser geolocation is denied/unavailable: lets the user tap a
   // point on the map to set their location manually.
@@ -41,7 +42,15 @@ export interface NoraMapProps {
   pickedPoint?: { latitude: number; longitude: number } | null;
 }
 
-export function NoraMap({ center, incidents, resources, className, onPick, pickedPoint }: NoraMapProps) {
+export function NoraMap({
+  center,
+  incidents,
+  resources,
+  missingPersons = { type: "FeatureCollection", features: [] },
+  className,
+  onPick,
+  pickedPoint,
+}: NoraMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const pickedMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -98,8 +107,21 @@ export function NoraMap({ center, incidents, resources, className, onPick, picke
         },
       });
 
+      map.addSource("missing-persons", { type: "geojson", data: missingPersons });
+      map.addLayer({
+        id: "missing-persons-circles",
+        type: "circle",
+        source: "missing-persons",
+        paint: {
+          "circle-radius": 9,
+          "circle-color": "#facc15",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#713f12",
+        },
+      });
+
       const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-      for (const layerId of ["incidents-circles", "resources-circles"]) {
+      for (const layerId of ["incidents-circles", "resources-circles", "missing-persons-circles"]) {
         map.on("mouseenter", layerId, (e) => {
           map.getCanvas().style.cursor = "pointer";
           const feature = e.features?.[0];
@@ -139,6 +161,12 @@ export function NoraMap({ center, incidents, resources, className, onPick, picke
     if (!map || !map.getSource("resources")) return;
     (map.getSource("resources") as maplibregl.GeoJSONSource).setData(resources);
   }, [resources]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getSource("missing-persons")) return;
+    (map.getSource("missing-persons") as maplibregl.GeoJSONSource).setData(missingPersons);
+  }, [missingPersons]);
 
   useEffect(() => {
     const map = mapRef.current;

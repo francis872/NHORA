@@ -23,6 +23,11 @@ export default function MapPage() {
     queryKey: ["map", "resources"],
     queryFn: () => fetchGeoJSON(API_ROUTES.mapResources),
   });
+  const missingPersonsQuery = useQuery({
+    queryKey: ["map", "missing-persons"],
+    queryFn: () => fetchGeoJSON(API_ROUTES.mapMissingPersons),
+    refetchInterval: 30_000,
+  });
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -36,6 +41,7 @@ export default function MapPage() {
         center={BOGOTA_CENTER}
         incidents={incidentsQuery.data ?? EMPTY_FEATURE_COLLECTION}
         resources={resourcesQuery.data ?? EMPTY_FEATURE_COLLECTION}
+        missingPersons={missingPersonsQuery.data ?? EMPTY_FEATURE_COLLECTION}
         className="h-[calc(100vh-3.5rem-3rem)] w-full"
       />
     </main>

@@ -66,6 +66,12 @@ enum ResourceType {
   OTHER
 }
 
+enum MissingPersonStatus {
+  SEARCHING
+  LOCATED_CONFIRMED
+  NOT_FOUND
+}
+
 // ── Models ────────────────────────────────────────────────────────────────
 
 model User {
@@ -229,4 +235,33 @@ model Message {
 
   @@index([incidentId])
   @@map("messages")
+}
+
+// "Buscar una persona" (section 6 — missing-persons reports). nameNormalized/
+// municipalityNormalized are lowercase + accent-stripped copies of name/municipality,
+// written at create time (see missing-persons.service.ts), so search works without
+// depending on a Postgres unaccent extension being available on every host.
+model MissingPerson {
+  id                     String              @id @default(uuid())
+  name                   String
+  nameNormalized         String
+  municipality           String
+  municipalityNormalized String
+  department             String?
+  ageApprox              Int?
+  description            String?
+  status                 MissingPersonStatus @default(SEARCHING)
+  latitude               Float?
+  longitude              Float?
+
+  reporterDeviceId String?
+  reporterName     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([nameNormalized])
+  @@index([municipalityNormalized])
+  @@index([status])
+  @@map("missing_persons")
 }

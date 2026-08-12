@@ -63,6 +63,12 @@ export enum ResourceType {
   OTHER = "OTHER",
 }
 
+export enum MissingPersonStatus {
+  SEARCHING = "SEARCHING",
+  LOCATED_CONFIRMED = "LOCATED_CONFIRMED",
+  NOT_FOUND = "NOT_FOUND",
+}
+
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -106,4 +112,20 @@ export interface IncidentDto {
   createdAt: string;
   updatedAt: string;
   verifiedAt: string | null;
+}
+
+export interface MissingPersonDto {
+  id: string;
+  name: string;
+  municipality: string;
+  department: string | null;
+  ageApprox: number | null;
+  description: string | null;
+  status: MissingPersonStatus;
+  latitude: number | null;
+  longitude: number | null;
+  reporterDeviceId: string | null;
+  reporterName: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -10,7 +10,7 @@ centers.
 > NORA is **not** a substitute for official emergency organizations and does not provide
 > medical diagnoses. It supports decision-making — it does not make final decisions.
 
-This repository is being built in phases (see [docs/architecture/ROADMAP.md](docs/architecture/ROADMAP.md)).
+This repository is being built in phases (see [ARCHITECTURE.md](ARCHITECTURE.md#roadmap)).
 **Phase 1 (current): repository, architecture, base frontend/backend, PostgreSQL/PostGIS,
 Prisma, authentication.**
 
@@ -71,6 +71,48 @@ Default seeded admin: `admin@nora.local` / `ChangeMe123!` (override via `SEED_AD
 ```bash
 pnpm --filter @nora/api test        # unit tests
 pnpm --filter @nora/api test:e2e    # requires postgres running (pnpm docker:up)
+```
+
+## Branding
+
+Official marks live in `apps/web/public/brand/` (sourced from `apps/illustrador/`):
+
+- `nora-logo.svg` — shown full-screen as the splash on first page load (`SplashScreen`,
+  once per browser session), and used as the favicon.
+- `nora-logo.png` — the persistent mark shown in the app header (`SiteHeader`) once the
+  splash has faded, on every page.
+
+## Deploying
+
+### Web app → Vercel
+
+`apps/web` is a standard Next.js 14 app inside a pnpm workspace; Vercel's monorepo support
+handles the workspace automatically:
+
+1. Push this repository to GitHub/GitLab/Bitbucket (see below).
+2. In Vercel, "Add New Project" → import the repo.
+3. Set **Root Directory** to `apps/web`. Vercel detects the pnpm workspace at the repo root
+   and runs `pnpm install` there automatically before building.
+4. Framework preset: Next.js (auto-detected). Build/output settings: defaults are fine.
+5. Add the environment variable `NEXT_PUBLIC_API_URL` pointing to wherever `apps/api` ends
+   up hosted (Vercel does not run the NestJS API — it needs a Node host, e.g. Render, Fly.io,
+   Railway, or an Azure container). Until that's deployed, auth calls on the live site will
+   fail — this is expected for a frontend-only deploy.
+
+### API → any Node host
+
+`apps/api` ships with a Dockerfile (`apps/api/Dockerfile`) and expects `DATABASE_URL`,
+`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` (see `.env.example`) plus a reachable
+PostgreSQL/PostGIS instance.
+
+### Git
+
+```bash
+git init                 # already done in this repo
+git add -A
+git commit -m "..."
+git remote add origin <your-repo-url>
+git push -u origin master
 ```
 
 ## Documentation

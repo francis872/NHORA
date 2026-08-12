@@ -102,10 +102,6 @@ ALTER TABLE "incident_reports" ADD CONSTRAINT "incident_reports_incidentId_fkey"
 ALTER TABLE "incident_reports" ADD CONSTRAINT "incident_reports_reportedById_fkey" FOREIGN KEY ("reportedById") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- PostGIS: enable extension + functional GiST indexes for spatial queries
--- (ST_DWithin/ST_MakePoint used at query time in incidents.service.ts / map.service.ts —
--- see section 10 of the master prompt). No persisted geometry column is kept; lat/lng
--- stay the source of truth and geometry is computed on the fly to avoid the
--- `postgresqlExtensions` preview-feature issues hit earlier (see ARCHITECTURE.md).
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE INDEX "incidents_geom_gist_idx" ON "incidents"

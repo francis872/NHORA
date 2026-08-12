@@ -25,6 +25,7 @@ FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /repo/package.json /repo/pnpm-workspace.yaml ./
 COPY --from=build /repo/apps/api/package.json apps/api/package.json
+COPY --from=build /repo/packages/types packages/types
 COPY --from=build /repo/apps/api/dist apps/api/dist
 COPY --from=build /repo/apps/api/node_modules apps/api/node_modules
 COPY --from=build /repo/database/generated database/generated

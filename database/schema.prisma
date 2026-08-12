@@ -84,6 +84,7 @@ model User {
   incidentsReported Incident[]       @relation("IncidentReportedBy")
   incidentsVerified Incident[]       @relation("IncidentVerifiedBy")
   incidentReports   IncidentReport[]
+  safetyCheckins    SafetyCheckin[]
 
   @@map("users")
 }
@@ -189,4 +190,20 @@ model Resource {
   @@index([type])
   @@index([latitude, longitude])
   @@map("resources")
+}
+
+// Citizen "I'm safe" check-ins (home page action). Anonymous-friendly: userId is
+// optional so an unauthenticated device can still register a status during an
+// emergency (section 6 — "Estoy a salvo").
+model SafetyCheckin {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  latitude  Float?
+  longitude Float?
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("safety_checkins")
 }

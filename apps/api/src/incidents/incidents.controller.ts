@@ -7,15 +7,18 @@ import { CreateIncidentReportDto } from "./dto/create-incident-report.dto";
 import { QueryIncidentsDto } from "./dto/query-incidents.dto";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
+import { OptionalAuth } from "../auth/decorators/optional-auth.decorator";
 import type { JwtPayload } from "@nora/types";
 
 @Controller("incidents")
 export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
 
+  // Reporting an incident must work for citizens without an account.
+  @OptionalAuth()
   @Post()
-  create(@Body() dto: CreateIncidentDto, @CurrentUser() user: JwtPayload) {
-    return this.incidentsService.create(dto, user.sub);
+  create(@Body() dto: CreateIncidentDto, @CurrentUser() user: JwtPayload | undefined) {
+    return this.incidentsService.create(dto, user?.sub);
   }
 
   @Get()
@@ -39,12 +42,13 @@ export class IncidentsController {
     return this.incidentsService.update(id, dto, user.sub);
   }
 
+  @OptionalAuth()
   @Post(":id/reports")
   addReport(
     @Param("id") id: string,
     @Body() dto: CreateIncidentReportDto,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: JwtPayload | undefined,
   ) {
-    return this.incidentsService.addReport(id, dto, user.sub);
+    return this.incidentsService.addReport(id, dto, user?.sub);
   }
 }

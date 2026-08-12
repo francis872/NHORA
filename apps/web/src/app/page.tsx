@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldAlert, LifeBuoy, MapPin, MessageCircle, Map as MapIcon } from "lucide-react";
+import { ShieldAlert, LifeBuoy, MapPin, Users, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass-panel";
 
@@ -23,15 +23,15 @@ const actions = [
     variant: "glass" as const,
   },
   {
-    href: "/chat",
-    label: "HABLAR CON NORA",
-    icon: MessageCircle,
-    variant: "glass" as const,
-  },
-  {
     href: "/map",
     label: "VER MAPA",
     icon: MapIcon,
+    variant: "glass" as const,
+  },
+  {
+    href: "/chat",
+    label: "CONTACTAR SERVICIOS Y OTROS USUARIOS",
+    icon: Users,
     variant: "glass" as const,
   },
 ];

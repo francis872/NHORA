@@ -36,4 +36,4 @@ EXPOSE 4000
 # Runs pending migrations against the live DATABASE_URL, then starts the API. Baked in
 # here (rather than left to an external deploy hook) so any host running this image
 # boots correctly without extra configuration.
-CMD ["sh", "-c", "pnpm --filter @nora/api exec prisma migrate deploy --schema database/schema.prisma && node apps/api/dist/main.js"]
+CMD ["sh", "-c", "pnpm --filter @nora/api exec prisma migrate deploy --schema ../../database/schema.prisma && node apps/api/dist/main.js"]

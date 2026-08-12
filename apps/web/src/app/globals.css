@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 40% 9%;
+    --card-foreground: 210 40% 98%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 210 40% 98%;
+    --critical: 0 72% 51%;
+    --critical-foreground: 210 40% 98%;
+    --border: 217 33% 20%;
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 65%;
+    --radius: 0.75rem;
+
+    /* Glassmorphism tokens (section 20 — moderate glass, no gradient overload) */
+    --glass-bg: 255 255 255 / 0.045;
+    --glass-bg-strong: 255 255 255 / 0.08;
+    --glass-border: 255 255 255 / 0.1;
+    --glass-shine: 255 255 255 / 0.16;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
+}
+
+@layer components {
+  /* Minimal glass surface — use for cards, panels, nav bars. */
+  .glass {
+    background-color: rgb(var(--glass-bg));
+    border: 1px solid rgb(var(--glass-border));
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+  }
+
+  .glass-strong {
+    background-color: rgb(var(--glass-bg-strong));
+    border: 1px solid rgb(var(--glass-border));
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+  }
+
+  /* Liquid glass — a glass surface with a slow-moving refractive sheen.
+     Reserve for a few high-impact moments (hero, SOS), not every card. */
+  .liquid-glass {
+    position: relative;
+    isolation: isolate;
+    background-color: rgb(var(--glass-bg-strong));
+    border: 1px solid rgb(var(--glass-border));
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    overflow: hidden;
+  }
+
+  .liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    z-index: -1;
+    background: conic-gradient(
+      from 180deg,
+      hsl(var(--primary) / 0.35),
+      transparent 30%,
+      transparent 60%,
+      hsl(var(--critical) / 0.25),
+      hsl(var(--primary) / 0.35)
+    );
+    filter: blur(40px);
+    animation: liquid-spin 16s linear infinite;
+  }
+
+  .liquid-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgb(var(--glass-shine)) 0%, transparent 35%);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+}
+
+@keyframes liquid-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-glass::before {
+    animation: none;
+  }
+}

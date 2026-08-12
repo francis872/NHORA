@@ -10,6 +10,7 @@ import { IncidentsModule } from "./incidents/incidents.module";
 import { SosModule } from "./sos/sos.module";
 import { MapModule } from "./map/map.module";
 import { SafetyModule } from "./safety/safety.module";
+import { MessagesModule } from "./messages/messages.module";
 import { RequestLoggerMiddleware } from "./common/request-logger.middleware";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
@@ -26,6 +27,7 @@ import { RolesGuard } from "./auth/guards/roles.guard";
     SosModule,
     MapModule,
     SafetyModule,
+    MessagesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

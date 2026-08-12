@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Role, type IncidentDto } from "@nora/types";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -93,6 +94,7 @@ export default function CommandIncidentsPage() {
             <tr>
               <th className="px-4 py-3">Tipo</th>
               <th className="px-4 py-3">Descripción</th>
+              <th className="px-4 py-3">Reportado por</th>
               <th className="px-4 py-3">Prioridad</th>
               <th className="px-4 py-3">Estado</th>
               <th className="px-4 py-3" />
@@ -103,6 +105,9 @@ export default function CommandIncidentsPage() {
               <tr key={incident.id} className="border-t border-border">
                 <td className="px-4 py-3">{INCIDENT_TYPE_LABELS[incident.type]}</td>
                 <td className="max-w-xs truncate px-4 py-3">{incident.description}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {incident.reporterName ?? (incident.reporterDeviceId ? "Anónimo" : "—")}
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-medium ${
@@ -114,17 +119,24 @@ export default function CommandIncidentsPage() {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{incident.status}</td>
                 <td className="px-4 py-3 text-right">
-                  {(incident.status === "REPORTED" || incident.status === "PENDING_VERIFICATION") && (
-                    <Button variant="outline" size="sm" onClick={() => verify(incident.id)}>
-                      Verificar
-                    </Button>
-                  )}
+                  <div className="flex justify-end gap-2">
+                    <Link href={`/incidents/${incident.id}`}>
+                      <Button variant="outline" size="sm">
+                        Responder
+                      </Button>
+                    </Link>
+                    {(incident.status === "REPORTED" || incident.status === "PENDING_VERIFICATION") && (
+                      <Button variant="outline" size="sm" onClick={() => verify(incident.id)}>
+                        Verificar
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
             {incidentsQuery.data?.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
                   No hay incidentes para este filtro.
                 </td>
               </tr>

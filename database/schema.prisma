@@ -136,6 +136,11 @@ model Incident {
   peopleInjured          Int?
   infrastructureAffected String?
 
+  // Lightweight anonymous identity (see lib/identity.ts on the client): lets an
+  // operator identify/contact a reporter who never created an account.
+  reporterDeviceId String?
+  reporterName     String?
+
   reportedById String?
   reportedBy   User?   @relation("IncidentReportedBy", fields: [reportedById], references: [id], onDelete: SetNull)
 
@@ -150,7 +155,8 @@ model Incident {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reports IncidentReport[]
+  reports  IncidentReport[]
+  messages Message[]
 
   @@index([type])
   @@index([status])
@@ -206,4 +212,21 @@ model SafetyCheckin {
 
   @@index([userId])
   @@map("safety_checkins")
+}
+
+// Direct communication thread attached to an incident/SOS report — the citizen
+// (identified by account or device identity) and command-center operators exchange
+// messages here. No account required to participate as the reporting citizen.
+model Message {
+  id           String   @id @default(uuid())
+  incidentId   String
+  incident     Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  senderRole   String
+  senderUserId String?
+  senderName   String?
+  body         String
+  createdAt    DateTime @default(now())
+
+  @@index([incidentId])
+  @@map("messages")
 }

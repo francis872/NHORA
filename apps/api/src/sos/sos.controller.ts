@@ -20,6 +20,8 @@ export class SosController {
       description: dto.description,
       peopleAffected: dto.peopleAffected,
       userId: user?.sub,
+      deviceId: dto.deviceId,
+      reporterName: dto.reporterName,
     });
 
     return {

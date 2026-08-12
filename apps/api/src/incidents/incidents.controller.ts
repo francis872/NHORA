@@ -27,8 +27,13 @@ export class IncidentsController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string, @CurrentUser() user: JwtPayload) {
-    return this.incidentsService.findOne(id, { sub: user.sub, role: user.role });
+  @OptionalAuth()
+  findOne(
+    @Param("id") id: string,
+    @Query("deviceId") deviceId: string | undefined,
+    @CurrentUser() user: JwtPayload | undefined,
+  ) {
+    return this.incidentsService.findOne(id, { sub: user?.sub, role: user?.role, deviceId });
   }
 
   // Operator/admin only — verification, status and severity changes (section 6/23).

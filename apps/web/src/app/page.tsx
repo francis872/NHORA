@@ -29,8 +29,8 @@ const actions = [
     variant: "glass" as const,
   },
   {
-    href: "/chat",
-    label: "CONTACTAR SERVICIOS Y OTROS USUARIOS",
+    href: "/my-reports",
+    label: "MIS REPORTES Y MENSAJES",
     icon: Users,
     variant: "glass" as const,
   },

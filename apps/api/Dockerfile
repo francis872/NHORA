@@ -13,6 +13,7 @@ FROM deps AS build
 COPY database database
 COPY packages packages
 COPY apps/api apps/api
+RUN pnpm --filter @nora/types build
 RUN pnpm --filter @nora/api exec prisma generate --schema ../../database/schema.prisma
 RUN pnpm --filter @nora/api build
 

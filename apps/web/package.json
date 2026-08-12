@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm --filter @nora/types build && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "echo \"(frontend tests land in Phase 7 — see docs/architecture)\""

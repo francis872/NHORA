@@ -35,11 +35,18 @@ export interface NoraMapProps {
   incidents: GeoJSON.FeatureCollection;
   resources: GeoJSON.FeatureCollection;
   className?: string;
+  // Fallback for when browser geolocation is denied/unavailable: lets the user tap a
+  // point on the map to set their location manually.
+  onPick?: (point: { latitude: number; longitude: number }) => void;
+  pickedPoint?: { latitude: number; longitude: number } | null;
 }
 
-export function NoraMap({ center, incidents, resources, className }: NoraMapProps) {
+export function NoraMap({ center, incidents, resources, className, onPick, pickedPoint }: NoraMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const pickedMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const onPickRef = useRef(onPick);
+  onPickRef.current = onPick;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -110,6 +117,10 @@ export function NoraMap({ center, incidents, resources, className }: NoraMapProp
       }
     });
 
+    map.on("click", (e) => {
+      onPickRef.current?.({ latitude: e.lngLat.lat, longitude: e.lngLat.lng });
+    });
+
     return () => {
       map.remove();
       mapRef.current = null;
@@ -129,5 +140,29 @@ export function NoraMap({ center, incidents, resources, className }: NoraMapProp
     (map.getSource("resources") as maplibregl.GeoJSONSource).setData(resources);
   }, [resources]);
 
-  return <div ref={containerRef} className={className} />;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!pickedPoint) {
+      pickedMarkerRef.current?.remove();
+      pickedMarkerRef.current = null;
+      return;
+    }
+
+    const lngLat: [number, number] = [pickedPoint.longitude, pickedPoint.latitude];
+    if (pickedMarkerRef.current) {
+      pickedMarkerRef.current.setLngLat(lngLat);
+    } else {
+      pickedMarkerRef.current = new maplibregl.Marker({ color: "#38bdf8" }).setLngLat(lngLat).addTo(map);
+    }
+  }, [pickedPoint]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      style={onPick ? { cursor: "crosshair" } : undefined}
+    />
+  );
 }

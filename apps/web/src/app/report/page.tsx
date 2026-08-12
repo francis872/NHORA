@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,9 +13,15 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { NoraMap } from "@/components/map/nora-map";
 import { API_ROUTES, authFetch } from "@/lib/api";
 import { getCurrentPosition } from "@/lib/geolocation";
 import { INCIDENT_TYPE_LABELS } from "@/lib/incident-labels";
+import { getIdentity } from "@/lib/identity";
+import { addMyReport } from "@/lib/my-reports";
+
+const BOGOTA_CENTER: [number, number] = [-74.0721, 4.711];
+const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 const schema = z.object({
   type: z.nativeEnum(IncidentType),
@@ -30,8 +37,11 @@ export default function ReportIncidentPage() {
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ merged: boolean; priorityClass: string } | null>(null);
+  const [result, setResult] = useState<{ id: string; merged: boolean; priorityClass: string } | null>(
+    null,
+  );
 
   const {
     register,
@@ -47,8 +57,10 @@ export default function ReportIncidentPage() {
     setLocationError(null);
     try {
       setCoords(await getCurrentPosition());
+      setShowMapPicker(false);
     } catch (err) {
       setLocationError(err instanceof Error ? err.message : "No se pudo obtener tu ubicación.");
+      setShowMapPicker(true);
     } finally {
       setLocating(false);
     }
@@ -57,13 +69,20 @@ export default function ReportIncidentPage() {
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
     if (!coords) {
-      setLocationError("Comparte tu ubicación antes de enviar el reporte.");
+      setLocationError("Comparte tu ubicación, o elígela en el mapa, antes de enviar el reporte.");
+      setShowMapPicker(true);
       return;
     }
 
+    const identity = getIdentity();
     const res = await authFetch(API_ROUTES.incidents, {
       method: "POST",
-      body: JSON.stringify({ ...values, ...coords }),
+      body: JSON.stringify({
+        ...values,
+        ...coords,
+        deviceId: identity.deviceId,
+        reporterName: identity.displayName,
+      }),
     });
 
     if (!res.ok) {
@@ -73,7 +92,13 @@ export default function ReportIncidentPage() {
     }
 
     const data = await res.json();
-    setResult({ merged: data.merged, priorityClass: data.incident.priorityClass });
+    addMyReport({
+      id: data.incident.id,
+      kind: "INCIDENT",
+      label: INCIDENT_TYPE_LABELS[values.type] ?? "Incidente",
+      createdAt: new Date().toISOString(),
+    });
+    setResult({ id: data.incident.id, merged: data.merged, priorityClass: data.incident.priorityClass });
   };
 
   if (result) {
@@ -86,6 +111,13 @@ export default function ReportIncidentPage() {
           <p className="text-sm text-muted-foreground">
             Prioridad estimada: <span className="font-medium text-foreground">{result.priorityClass}</span>
           </p>
+          <p className="text-xs text-muted-foreground">
+            Un operador del centro de mando revisará y verificará este reporte. Puedes seguir el estado
+            y hablar directamente con el equipo de atención en la conversación del reporte.
+          </p>
+          <Link href={`/incidents/${result.id}`}>
+            <Button className="w-full">Ver conversación y estado</Button>
+          </Link>
           <Button variant="outline" onClick={() => router.push("/")}>
             Volver al inicio
           </Button>
@@ -142,7 +174,31 @@ export default function ReportIncidentPage() {
           )}
           {coords ? "Ubicación compartida" : "Compartir mi ubicación"}
         </Button>
-        {locationError && <p className="text-xs text-critical">{locationError}</p>}
+        {locationError && (
+          <p className="text-xs text-critical">
+            {locationError} Si tu navegador bloqueó el permiso, toca un punto en el mapa de abajo para
+            marcar tu ubicación manualmente.
+          </p>
+        )}
+
+        {showMapPicker && (
+          <div className="overflow-hidden rounded-xl border border-border">
+            <NoraMap
+              center={coords ? [coords.longitude, coords.latitude] : BOGOTA_CENTER}
+              incidents={EMPTY_FEATURE_COLLECTION}
+              resources={EMPTY_FEATURE_COLLECTION}
+              className="h-56 w-full"
+              pickedPoint={coords}
+              onPick={(point) => {
+                setCoords(point);
+                setLocationError(null);
+              }}
+            />
+            <p className="bg-background/60 px-3 py-2 text-center text-xs text-muted-foreground">
+              Toca el mapa para marcar dónde ocurre el incidente
+            </p>
+          </div>
+        )}
 
         {serverError && <p className="text-sm text-critical">{serverError}</p>}
 

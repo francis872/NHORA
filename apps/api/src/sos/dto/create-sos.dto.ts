@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsInt, IsLatitude, IsLongitude, IsOptional, IsString, Min } from "class-validator";
+import { IsInt, IsLatitude, IsLongitude, IsOptional, IsString, MaxLength, Min } from "class-validator";
 
 export class CreateSosDto {
   @Type(() => Number)
@@ -19,4 +19,14 @@ export class CreateSosDto {
   @IsInt()
   @Min(0)
   peopleAffected?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  deviceId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  reporterName?: string;
 }

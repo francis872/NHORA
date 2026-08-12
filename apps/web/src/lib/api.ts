@@ -9,6 +9,7 @@ export const API_ROUTES = {
   me: `${API_BASE_URL}/api/v1/users/me`,
   incidents: `${API_BASE_URL}/api/v1/incidents`,
   incident: (id: string) => `${API_BASE_URL}/api/v1/incidents/${id}`,
+  incidentMessages: (id: string) => `${API_BASE_URL}/api/v1/incidents/${id}/messages`,
   sos: `${API_BASE_URL}/api/v1/sos`,
   safetyCheckins: `${API_BASE_URL}/api/v1/safety-checkins`,
   mapIncidents: `${API_BASE_URL}/api/v1/map/incidents`,

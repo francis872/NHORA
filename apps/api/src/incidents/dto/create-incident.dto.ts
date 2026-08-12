@@ -6,6 +6,7 @@ import {
   IsLongitude,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   MinLength,
 } from "class-validator";
@@ -56,4 +57,14 @@ export class CreateIncidentDto {
   @IsOptional()
   @IsString()
   infrastructureAffected?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  deviceId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  reporterName?: string;
 }

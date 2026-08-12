@@ -101,6 +101,8 @@ export interface IncidentDto {
   peopleInjured: number | null;
   infrastructureAffected: string | null;
   duplicateOfId: string | null;
+  reporterDeviceId: string | null;
+  reporterName: string | null;
   createdAt: string;
   updatedAt: string;
   verifiedAt: string | null;

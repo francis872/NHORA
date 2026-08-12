@@ -98,6 +98,8 @@ export class IncidentsService {
         peopleInjured: dto.peopleInjured,
         infrastructureAffected: dto.infrastructureAffected,
         reportedById: userId,
+        reporterDeviceId: dto.deviceId,
+        reporterName: dto.reporterName,
       },
     });
 
@@ -110,6 +112,8 @@ export class IncidentsService {
     description?: string;
     peopleAffected?: number;
     userId?: string;
+    deviceId?: string;
+    reporterName?: string;
   }) {
     return this.create(
       {
@@ -119,6 +123,8 @@ export class IncidentsService {
         latitude: input.latitude,
         longitude: input.longitude,
         peopleAffected: input.peopleAffected,
+        deviceId: input.deviceId,
+        reporterName: input.reporterName,
       },
       input.userId,
     );
@@ -138,15 +144,19 @@ export class IncidentsService {
     });
   }
 
-  async findOne(id: string, requester: { sub: string; role: Role }) {
+  async findOne(id: string, requester: { sub?: string; role?: Role; deviceId?: string }) {
     const incident = await this.prisma.incident.findUnique({ where: { id } });
     if (!incident) throw new NotFoundException("Incident not found");
 
-    if (requester.role === Role.CITIZEN && incident.reportedById !== requester.sub) {
-      throw new ForbiddenException("You can only view your own reports");
-    }
+    if (requester.role === Role.OPERATOR || requester.role === Role.ADMIN) return incident;
 
-    return incident;
+    const ownsByAccount = incident.reportedById && incident.reportedById === requester.sub;
+    const ownsByDevice = incident.reporterDeviceId && incident.reporterDeviceId === requester.deviceId;
+    const isUnclaimed = !incident.reportedById && !incident.reporterDeviceId;
+
+    if (ownsByAccount || ownsByDevice || isUnclaimed) return incident;
+
+    throw new ForbiddenException("You can only view your own reports");
   }
 
   async update(id: string, dto: UpdateIncidentDto, operatorId: string) {

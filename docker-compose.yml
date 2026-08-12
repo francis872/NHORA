@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-in-local-env}
       POSTGRES_DB: ${POSTGRES_DB:-nora}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5544}:5432"
     volumes:
       - nora-postgres-data:/var/lib/postgresql/data
     healthcheck:

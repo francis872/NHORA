@@ -1,18 +1,19 @@
 // NORA — Prisma schema
 // Phase 1 scope: authentication & core User model only.
 // Incident, Resource, Alert, etc. (see section 12 of the master prompt) land in later phases.
-// PostGIS extension is enabled now so geometry columns can be added without a datasource change.
+// PostGIS is enabled on the postgis/postgis Docker image; the `postgresqlExtensions`
+// preview feature is intentionally NOT used here — it caused a P1010 permission error
+// during `migrate dev` in local testing. Geometry columns will be added via a manual
+// SQL migration (`CREATE EXTENSION IF NOT EXISTS postgis;`) when Phase 2 needs them.
 
 generator client {
-  provider        = "prisma-client-js"
-  output          = "./generated/client"
-  previewFeatures = ["postgresqlExtensions"]
+  provider = "prisma-client-js"
+  output   = "./generated/client"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [postgis]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ── Enums ─────────────────────────────────────────────────────────────────

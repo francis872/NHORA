@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocalStorageState } from "@/lib/use-local-storage";
 import { z } from "zod";
 import { Search, LoaderCircle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,23 +51,109 @@ const reportSchema = z.object({
 type ReportValues = z.infer<typeof reportSchema>;
 
 export default function MissingPersonsPage() {
-  const [name, setName] = useState("");
-  const [municipality, setMunicipality] = useState("");
+  const [searchDraft, setSearchDraft, clearSearchDraft] = useLocalStorageState(
+    "nora.missing-persons.searchDraft",
+    { name: "", municipality: "" },
+  );
+  const [name, setName] = useState(searchDraft.name);
+  const [municipality, setMunicipality] = useState(searchDraft.municipality);
   const [results, setResults] = useState<MissingPersonResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [mode, setMode] = useState<"search" | "report" | "done">("search");
-  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [coords, setCoords, clearCoords] = useLocalStorageState<{ latitude: number; longitude: number } | null>(
+    "nora.missing-persons.coords",
+    null,
+  );
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [showMapPicker, setShowMapPicker, clearShowMapPicker] = useLocalStorageState<boolean>(
+    "nora.missing-persons.showMapPicker",
+    false,
+  );
   const [serverError, setServerError] = useState<string | null>(null);
+  const [reportDraft, setReportDraft, clearReportDraft] = useLocalStorageState<{
+    name: string;
+    municipality: string;
+    department: string;
+    ageApprox: string;
+    description: string;
+  }>("nora.missing-persons.reportDraft", {
+    name: "",
+    municipality: "",
+    department: "",
+    ageApprox: "",
+    description: "",
+  });
   const searchAbortRef = useRef<AbortController | null>(null);
+
+  const parsedReportDraft: Partial<ReportValues> = {
+    name: reportDraft.name || undefined,
+    municipality: reportDraft.municipality || undefined,
+    department: reportDraft.department || undefined,
+    ageApprox:
+      reportDraft.ageApprox !== "" && !Number.isNaN(Number(reportDraft.ageApprox))
+        ? Number(reportDraft.ageApprox)
+        : undefined,
+    description: reportDraft.description || undefined,
+  };
 
   const {
     register,
     handleSubmit,
+    watch,
+    reset,
     formState: { errors, isSubmitting },
-  } = useForm<ReportValues>({ resolver: zodResolver(reportSchema) });
+  } = useForm<ReportValues>({
+    resolver: zodResolver(reportSchema),
+    defaultValues: parsedReportDraft,
+  });
+
+  const reportFormValues = watch();
+
+  useEffect(() => {
+    setSearchDraft({ name, municipality });
+  }, [name, municipality, setSearchDraft]);
+
+  useEffect(() => {
+    setReportDraft((current) => ({
+      ...current,
+      name: reportFormValues.name ?? "",
+      municipality: reportFormValues.municipality ?? "",
+      department: reportFormValues.department ?? "",
+      ageApprox:
+        reportFormValues.ageApprox !== undefined && reportFormValues.ageApprox !== null
+          ? String(reportFormValues.ageApprox)
+          : "",
+      description: reportFormValues.description ?? "",
+    }));
+  }, [reportFormValues, setReportDraft]);
+
+  const clearSearchDraftAndReset = () => {
+    clearSearchDraft();
+    setName("");
+    setMunicipality("");
+  };
+
+  const clearReportDraftAndReset = () => {
+    clearReportDraft();
+    clearCoords();
+    clearShowMapPicker();
+    reset({
+      name: "",
+      municipality: "",
+      department: "",
+      ageApprox: undefined,
+      description: "",
+    });
+  };
+
+  const hasSearchDraft = searchDraft.name !== "" || searchDraft.municipality !== "";
+  const hasReportDraft =
+    reportDraft.name !== "" ||
+    reportDraft.municipality !== "" ||
+    reportDraft.department !== "" ||
+    reportDraft.ageApprox !== "" ||
+    reportDraft.description !== "";
 
   const handleSearch = async () => {
     searchAbortRef.current?.abort();
@@ -155,6 +242,19 @@ export default function MissingPersonsPage() {
         </div>
 
         <GlassPanel as="form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {hasReportDraft && (
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium">Datos guardados localmente.</p>
+                <Button type="button" variant="outline" size="sm" onClick={clearReportDraftAndReset}>
+                  Borrar borrador
+                </Button>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                El formulario conserva los datos en este navegador hasta que envíes o borres el borrador.
+              </p>
+            </div>
+          )}
           <div>
             <Input placeholder="Nombre" {...register("name")} />
             {errors.name && <p className="mt-1 text-xs text-critical">{errors.name.message}</p>}
@@ -217,6 +317,19 @@ export default function MissingPersonsPage() {
       </div>
 
       <GlassPanel className="flex flex-col gap-3">
+        {hasSearchDraft && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">Datos guardados localmente.</p>
+              <Button type="button" variant="outline" size="sm" onClick={clearSearchDraftAndReset}>
+                Borrar caché de búsqueda
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Tu última búsqueda se mantiene en este dispositivo hasta que la borres.
+            </p>
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-sm font-medium">Nombre</label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />

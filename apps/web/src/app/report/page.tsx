@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocalStorageState } from "@/lib/use-local-storage";
 import { z } from "zod";
 import { MapPin, LoaderCircle } from "lucide-react";
 import { IncidentType } from "@nora/types";
@@ -34,23 +35,86 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ReportIncidentPage() {
   const router = useRouter();
-  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [coords, setCoords, clearCoords] = useLocalStorageState<{
+    latitude: number;
+    longitude: number;
+  } | null>("nora.report.coords", null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [showMapPicker, setShowMapPicker, clearShowMapPicker] = useLocalStorageState<boolean>(
+    "nora.report.showMapPicker",
+    false,
+  );
   const [serverError, setServerError] = useState<string | null>(null);
   const [result, setResult] = useState<{ id: string; merged: boolean; priorityClass: string } | null>(
     null,
   );
 
+  const [reportDraft, setReportDraft, clearReportDraft] = useLocalStorageState<{
+    type: IncidentType;
+    description: string;
+    peopleAffected: string;
+    infrastructureAffected: string;
+  }>("nora.report.draft", {
+    type: IncidentType.OTHER,
+    description: "",
+    peopleAffected: "",
+    infrastructureAffected: "",
+  });
+
+  const parsedReportDraft: Partial<FormValues> = {
+    type: reportDraft.type,
+    description: reportDraft.description || undefined,
+    peopleAffected:
+      reportDraft.peopleAffected !== "" && !Number.isNaN(Number(reportDraft.peopleAffected))
+        ? Number(reportDraft.peopleAffected)
+        : undefined,
+    infrastructureAffected: reportDraft.infrastructureAffected || undefined,
+  };
+
   const {
     register,
     handleSubmit,
+    watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { type: IncidentType.OTHER },
+    defaultValues: parsedReportDraft,
   });
+
+  const reportFormValues = watch();
+
+  useEffect(() => {
+    setReportDraft((current) => ({
+      ...current,
+      type: reportFormValues.type,
+      description: reportFormValues.description ?? "",
+      peopleAffected:
+        reportFormValues.peopleAffected !== undefined && reportFormValues.peopleAffected !== null
+          ? String(reportFormValues.peopleAffected)
+          : "",
+      infrastructureAffected: reportFormValues.infrastructureAffected ?? "",
+    }));
+  }, [reportFormValues, setReportDraft]);
+
+  const clearReportDraftAndReset = () => {
+    clearReportDraft();
+    clearCoords();
+    clearShowMapPicker();
+    reset({
+      type: IncidentType.OTHER,
+      description: "",
+      peopleAffected: undefined,
+      infrastructureAffected: "",
+    });
+  };
+
+  const hasReportDraft =
+    reportDraft.type !== IncidentType.OTHER ||
+    reportDraft.description !== "" ||
+    reportDraft.peopleAffected !== "" ||
+    reportDraft.infrastructureAffected !== "";
 
   const handleLocate = async () => {
     setLocating(true);
@@ -98,6 +162,9 @@ export default function ReportIncidentPage() {
       label: INCIDENT_TYPE_LABELS[values.type] ?? "Incidente",
       createdAt: new Date().toISOString(),
     });
+    clearReportDraft();
+    clearCoords();
+    clearShowMapPicker();
     setResult({ id: data.incident.id, merged: data.merged, priorityClass: data.incident.priorityClass });
   };
 
@@ -136,6 +203,20 @@ export default function ReportIncidentPage() {
       </div>
 
       <GlassPanel as="form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        {hasReportDraft && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">Datos guardados localmente.</p>
+              <Button type="button" variant="outline" size="sm" onClick={clearReportDraftAndReset}>
+                Borrar borrador
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              El formulario conserva los datos en este navegador hasta que envíes o borres el borrador.
+            </p>
+          </div>
+        )}
+
         <div>
           <Select {...register("type")}>
             {Object.entries(INCIDENT_TYPE_LABELS).map(([value, label]) => (

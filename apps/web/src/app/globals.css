@@ -24,13 +24,30 @@
     --glass-shine: 255 255 255 / 0.16;
   }
 
-  * {
-    @apply border-border;
+  html {
+    min-height: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
+    min-width: 0;
     font-feature-settings: "cv11", "ss01";
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
   }
 }
 
